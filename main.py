@@ -124,3 +124,4 @@ if __name__ == '__main__':
     delete_duplicate_records(cursor)
     read_job_status_later_json(cursor)
     delete_duplicate_records(cursor)
+    db.close()

@@ -49,7 +49,7 @@ def saving_in_db(cursor1, query, query_values):
         return False
     except Exception as eee:
         print("Exception: {}".format(eee))
-        return False
+        # return False
 
 
 def add_new_job_status_later_record(cursor1, arr_json_data, file_name):
@@ -64,12 +64,14 @@ def add_new_job_status_later_record(cursor1, arr_json_data, file_name):
             jb_status_later = (r_data['Company'], r_data['Designation'], r_data['Status'], r_data['StatusID']
                                , r_data['Source'], created)
             print(jb_status_later)
-            if not saving_in_db(cursor1, insert_query_for_Job_Status_Later, jb_status_later):
-                return False
+            # if not saving_in_db(cursor1, insert_query_for_Job_Status_Later, jb_status_later):
+            #     return False
+
+            saving_in_db(cursor1, insert_query_for_Job_Status_Later, jb_status_later)
 
         except Exception as eee:
             print("General Exception in filename " + file_name + " " + str(eee))
-            return False
+            # return False
 
     return True
 

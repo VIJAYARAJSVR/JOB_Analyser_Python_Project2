@@ -76,9 +76,9 @@ def update_job_detail_record(cursor1, arr_json_data, file_name):
                 return False
             statusid = str(r_data['StatusID'])
 
-            update_query_for_job_detail = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET status_id_id = " + statusid + " WHERE company = '" + company + "' AND designation = '" + designation + "' AND created > (curdate() - interval 25 day)"
+            update_query_for_job_detail = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET status_id_id = " + statusid + " WHERE company = '" + company + "' AND designation = '" + designation + "' AND status_id_id < " + statusid + " AND created > (curdate() - interval 25 day)"
 
-            # print(update_query_for_job_detail)
+            print(update_query_for_job_detail)
             updating_in_db(cursor1, update_query_for_job_detail, 'Updated')
 
         except Exception as eee:

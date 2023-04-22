@@ -5,22 +5,32 @@ import re
 import mysql.connector as mysql
 from mysql.connector import Error
 
-dir_path_for_Job_Status_Later = "/Users/web_dev/Desktop/JOB_Status/"
 db_name = 'JOB_Analyser_DB'
-tbl_name_Job_Status_Later = 'JOB_Analyser_App_jobstatuslater'
 
+dir_path_Applied = "/Users/web_dev/Desktop/Applied_JOB/"
 tbl_name_Job_detail = 'JOB_Analyser_App_jobdetail'
+
+dir_path_for_Job_Status_Later = "/Users/web_dev/Desktop/JOB_Status/"
+tbl_name_Job_Status_Later = 'JOB_Analyser_App_jobstatuslater'
 
 insert_query_for_Job_Status_Later = '''INSERT INTO 
 JOB_Analyser_App_jobstatuslater(company,designation,status,statusid,source,created)
   VALUES (%s,%s,%s,%s,%s,%s)'''
 
+# delete_Job_Status_Later_query = ''' delete t1 FROM JOB_Analyser_App_jobstatuslater t1
+# INNER  JOIN JOB_Analyser_App_jobstatuslater t2
+# WHERE t1.id < t2.id AND
+#     t1.company = t2.company AND
+#     t1.designation = t2.designation AND
+#     t1.statusid = t2.statusid AND
+#     t1.source = t2.source
+#     ;
+# '''
 delete_Job_Status_Later_query = ''' delete t1 FROM JOB_Analyser_App_jobstatuslater t1
 INNER  JOIN JOB_Analyser_App_jobstatuslater t2
 WHERE t1.id < t2.id AND
     t1.company = t2.company AND
     t1.designation = t2.designation AND
-    t1.statusid = t2.statusid AND 
     t1.source = t2.source
     ;
 '''
@@ -53,17 +63,53 @@ def saving_in_db(cursor1, query, query_values, txt_task):
         print("Exception: {}".format(eee))
 
 
-def updating_in_db(cursor1, query, txt_task):
+def updating_post_in_db(cursor12, query, txt_task):
     try:
-        cursor1.execute(query)
+        cursor12.execute(query)
+        result = cursor12.rowcount
         db.commit()
-        print(txt_task + " Database Successfully")
-        return True
+
+        if result > 0:
+            print(str(result) + " Rows affected")
+            print(txt_task + " Database Successfully")
+            return True
+
+        return False
     except mysql.Error as err:
-        print("MySql Exception: {}".format(err))
+        print(txt_task + " MySql Exception: {}".format(err))
         return False
     except Exception as eee:
         print("Exception: {}".format(eee))
+
+
+def updating_in_db(cursor11, query, txt_task):
+    try:
+        cursor11.execute(query)
+        # result = cursor11.rowcount
+        db.commit()
+
+        # if result > 0:
+        #     print(str(result) + " Rows affected")
+        #     print(txt_task + " Database Successfully")
+        #     return True
+        print(txt_task + " Database Successfully")
+        return False
+    except mysql.Error as err:
+        print(txt_task + " MySql Exception: {}".format(err))
+        return False
+    except Exception as eee:
+        print("Exception: {}".format(eee))
+
+
+def update_To_Reject_job_detail_record(cursor11):
+    try:
+        update_to_reject_query_for_job_detail = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET status_id_id = 7  WHERE  created < (curdate() - interval 10 day) AND status_id_id <=2";
+
+        # print(update_toreject_query_for_job_detail)
+        updating_in_db(cursor11, update_to_reject_query_for_job_detail, 'Updated Status to Reject ')
+
+    except Exception as eee:
+        print("General Exception in METHOD update_To_Reject_job_detail_record filename  " + str(eee))
 
 
 def update_job_detail_record(cursor1, arr_json_data, file_name):
@@ -76,14 +122,43 @@ def update_job_detail_record(cursor1, arr_json_data, file_name):
                 return False
             statusid = str(r_data['StatusID'])
 
-            update_query_for_job_detail = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET status_id_id = " + statusid + " WHERE company = '" + company + "' AND designation = '" + designation + "' AND status_id_id < " + statusid + " AND created > (curdate() - interval 25 day)"
+            # update_query_for_job_detail = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET status_id_id = " + statusid + " WHERE company = '" + company + "' AND designation = '" + designation + "' AND status_id_id < " + statusid + " AND created > (curdate() - interval 25 day)"
 
-            print(update_query_for_job_detail)
-            updating_in_db(cursor1, update_query_for_job_detail, 'Updated')
+            update_query_for_job_detail = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET status_id_id = " + statusid + " WHERE company = '" + company + "' AND designation = '" + designation + "' AND created > (curdate() - interval 25 day) AND status_id_id < " + statusid
+
+            # print(update_query_for_job_detail)
+            if updating_in_db(cursor1, update_query_for_job_detail, 'Updated Status in'):
+                print("")
 
         except Exception as eee:
             print("General Exception in METHOD update_job_detail_record filename " + file_name + " " + str(eee))
         # return False
+
+
+def update_job_posted_job_detail_record(cursor1, json_data, file_name):
+    try:
+        company = json_data['Company'].strip()
+        designation = json_data['Designation'].strip()
+        source = json_data['Source'].strip()
+        posted_timee = json_data['Posted_DateTime'].strip()
+        posted_timee = posted_timee.lower().replace("posted", "")
+
+        if (company == "") or (designation == "") or (posted_timee == ""):
+            print("Company or Designation or postedTime is empty")
+            return False
+
+        update_job_posted_job_detail_record = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET posted_time = '" + posted_timee + "' WHERE  source ='" + source + "' AND  company = '" + company + "' AND designation = '" + designation + "' AND created > (curdate() - interval 5 day)"
+
+        print(update_job_posted_job_detail_record)
+
+        if updating_post_in_db(cursor1, update_job_posted_job_detail_record, 'Updated PostedTime in'):
+            return True
+        return False
+
+    except Exception as eee:
+        print("General Exception in METHOD update_job_posted_job_detail_record filename " + file_name + " " + str(
+            eee))
+    return False
 
 
 def add_new_job_status_later_record(cursor1, arr_json_data, file_name):
@@ -130,7 +205,7 @@ def read_job_status_later_jsonForUpdate(cursor11):
     except EOFError:
         print("Exception")
     except Exception:
-        print('General Exception in function name: read_job_status_later_json  ' + str(Exception))
+        print('General Exception in function name: read_job_status_later_jsonForUpdate  ' + str(Exception))
         print(Exception)
 
 
@@ -165,6 +240,35 @@ def read_job_status_later_json(cursor11):
         print(Exception)
 
 
+def read_job_posted_json_For_Update(cursor11):
+    try:
+        # print(dir_path)
+        for file_name in [file for file in os.listdir(dir_path_Applied) if
+                          (file.startswith('Posted') and file.endswith('.json') and not (file.__contains__('done_')))]:
+            path_with_file_name = dir_path_Applied + file_name
+            try:
+                with open(path_with_file_name) as json_file:
+                    data = json.load(json_file)
+
+                    shall_i_proceed = update_job_posted_job_detail_record(cursor11, data, file_name)
+                    if shall_i_proceed:
+                        new_file_name_with_path = dir_path_Applied + 'done_' + file_name
+                        os.rename(path_with_file_name, new_file_name_with_path)
+                    else:
+                        continue
+
+            except EnvironmentError:
+                print('EnvironmentError Exception')
+                continue
+    except FileNotFoundError:
+        print("Error: FileNotFoundError")
+    except EOFError:
+        print("Exception")
+    except Exception:
+        print('General Exception in function name: read_job_status_later_jsonForUpdate  ' + str(Exception))
+        print(Exception)
+
+
 def mysql_connect():
     try:
         return mysql.connect(
@@ -181,8 +285,16 @@ def mysql_connect():
 if __name__ == '__main__':
     db = mysql_connect()
     cursor = db.cursor()
-    # delete_duplicate_records(cursor)
+    delete_duplicate_records(cursor)
     read_job_status_later_jsonForUpdate(cursor)
     read_job_status_later_json(cursor)
+    update_To_Reject_job_detail_record(cursor)
     delete_duplicate_records(cursor)
+    db.close()
+
+    db = mysql_connect()
+    # db.execute('set max_allowed_packet=67108864')
+    # cursor1 = db.cursor(buffered=True)
+    cursor1 = db.cursor(buffered=True)
+    read_job_posted_json_For_Update(cursor1)
     db.close()

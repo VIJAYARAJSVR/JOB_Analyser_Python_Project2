@@ -135,6 +135,43 @@ def update_job_detail_record(cursor1, arr_json_data, file_name):
         # return False
 
 
+def calculate_Possibility(postedtime, source):
+    postedtimeee = postedtime.lower()
+    try:
+        if source.lower().strip() == "glassdoor":
+            if postedtimeee.endswith('d'):
+                return 0
+            if postedtimeee.endswith('h'):
+                return 50
+
+        arr_str_right_time = ["minutes", "now"]
+        arr_str_delay = ["month", "day", "today"]
+
+        for ttime in arr_str_right_time:
+            if ttime in postedtimeee:
+                return 100
+
+        for ttime in arr_str_delay:
+            if ttime in postedtimeee:
+                return 0
+
+        if "hour" in postedtimeee:
+            arr_num_hour = re.findall(r'\d+', postedtimeee)
+            if len(arr_num_hour) > 0:
+                hour_only = int(arr_num_hour[0])
+                if hour_only <= 2:
+                    return 100
+                elif hour_only <= 4:
+                    return 50
+                else:
+                    return 0
+        return 0
+    except Exception as eee:
+        print("General Exception in METHOD calculate_Possibility  " + " " + str(
+            eee))
+        return 0
+
+
 def update_job_posted_job_detail_record(cursor1, json_data, file_name):
     try:
         company = json_data['Company'].strip()
@@ -143,11 +180,16 @@ def update_job_posted_job_detail_record(cursor1, json_data, file_name):
         posted_timee = json_data['Posted_DateTime'].strip()
         posted_timee = posted_timee.lower().replace("posted", "")
 
+        str_possibility = str(calculate_Possibility(posted_timee, source))
+
+        if "ago" not in posted_timee:
+            posted_timee = posted_timee + " ago"
+
         if (company == "") or (designation == "") or (posted_timee == ""):
             print("Company or Designation or postedTime is empty")
             return False
 
-        update_job_posted_job_detail_record = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET posted_time = '" + posted_timee + "' WHERE  source ='" + source + "' AND  company = '" + company + "' AND designation = '" + designation + "' AND created > (curdate() - interval 5 day)"
+        update_job_posted_job_detail_record = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET possibility = "+str_possibility+", posted_time = '" + posted_timee + "' WHERE  source ='" + source + "' AND  company = '" + company + "' AND designation = '" + designation + "' AND created > (curdate() - interval 5 day)"
 
         print(update_job_posted_job_detail_record)
 

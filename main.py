@@ -35,6 +35,18 @@ WHERE t1.id < t2.id AND
     ;
 '''
 
+delete_Job_Contact_query = ''' delete t1 FROM JOB_Analyser_App_contact t1
+INNER  JOIN JOB_Analyser_App_contact t2
+WHERE t1.id < t2.id AND
+    t1.name = t2.name AND
+    t1.email = t2.email AND
+    t1.website = t2.website AND
+    t1.company = t2.company AND
+    t1.designation = t2.designation AND
+    t1.phone_number = t2.phone_number
+    ;
+'''
+
 
 def delete_duplicate_records(cursor12):
     try:
@@ -49,6 +61,19 @@ def delete_duplicate_records(cursor12):
         print("Exception: {}".format(eee))
         return False
 
+
+def delete_duplicate_contact_records(cursor12):
+    try:
+        cursor12.execute(delete_Job_Contact_query)
+        db.commit()
+        print("Successfully Deleted Contact Duplicate records in Database")
+        return True
+    except mysql.Error as err:
+        print("MySql Exception: {}".format(err))
+        return False
+    except Exception as eee:
+        print("Exception: {}".format(eee))
+        return False
 
 def saving_in_db(cursor1, query, query_values, txt_task):
     try:
@@ -144,8 +169,8 @@ def calculate_Possibility(postedtime, source):
             if postedtimeee.endswith('h'):
                 return 50
 
-        arr_str_right_time = ["minutes", "now"]
-        arr_str_delay = ["month", "day", "today"]
+        arr_str_right_time = ["minutes", "now", "just"]
+        arr_str_delay = ["month", "day", "today", "d"]
 
         for ttime in arr_str_right_time:
             if ttime in postedtimeee:
@@ -155,7 +180,7 @@ def calculate_Possibility(postedtime, source):
             if ttime in postedtimeee:
                 return 0
 
-        if "hour" in postedtimeee:
+        if "hour" or "h" in postedtimeee:
             arr_num_hour = re.findall(r'\d+', postedtimeee)
             if len(arr_num_hour) > 0:
                 hour_only = int(arr_num_hour[0])
@@ -182,14 +207,15 @@ def update_job_posted_job_detail_record(cursor1, json_data, file_name):
 
         str_possibility = str(calculate_Possibility(posted_timee, source))
 
-        if "ago" not in posted_timee:
-            posted_timee = posted_timee + " ago"
+        if "today" or "yesterday" not in posted_timee:
+            if "ago" not in posted_timee:
+                posted_timee = posted_timee + " ago"
 
         if (company == "") or (designation == "") or (posted_timee == ""):
             print("Company or Designation or postedTime is empty")
             return False
 
-        update_job_posted_job_detail_record = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET possibility = "+str_possibility+", posted_time = '" + posted_timee + "' WHERE  source ='" + source + "' AND  company = '" + company + "' AND designation = '" + designation + "' AND created > (curdate() - interval 5 day)"
+        update_job_posted_job_detail_record = "UPDATE JOB_Analyser_DB.JOB_Analyser_App_jobdetail SET possibility = " + str_possibility + ", posted_time = '" + posted_timee + "' WHERE  source ='" + source + "' AND  company = '" + company + "' AND designation = '" + designation + "' AND created > (curdate() - interval 5 day)"
 
         print(update_job_posted_job_detail_record)
 
@@ -332,6 +358,7 @@ if __name__ == '__main__':
     read_job_status_later_json(cursor)
     update_To_Reject_job_detail_record(cursor)
     delete_duplicate_records(cursor)
+    delete_duplicate_contact_records(cursor)
     db.close()
 
     db = mysql_connect()

@@ -47,6 +47,16 @@ WHERE t1.id < t2.id AND
     ;
 '''
 
+delete_Job_History_query = ''' delete t1 FROM JOB_Analyser_App_jobhistory t1
+INNER  JOIN JOB_Analyser_App_jobhistory t2
+WHERE t1.id < t2.id AND
+    t1.company = t2.company AND
+    t1.designation = t2.designation AND
+    t1.detail_id = t2.detail_id AND
+    t1.status_id_id = t2.status_id_id 
+    ;
+'''
+# t1.job_created = t2.job_created
 
 def delete_duplicate_records(cursor12):
     try:
@@ -74,6 +84,20 @@ def delete_duplicate_contact_records(cursor12):
     except Exception as eee:
         print("Exception: {}".format(eee))
         return False
+
+def delete_duplicate_history_records(cursor12):
+    try:
+        cursor12.execute(delete_Job_History_query)
+        db.commit()
+        print("Successfully Deleted Duplicate history records in Database")
+        return True
+    except mysql.Error as err:
+        print("MySql Exception: {}".format(err))
+        return False
+    except Exception as eee:
+        print("Exception: {}".format(eee))
+        return False
+
 
 def saving_in_db(cursor1, query, query_values, txt_task):
     try:
@@ -359,6 +383,7 @@ if __name__ == '__main__':
     update_To_Reject_job_detail_record(cursor)
     delete_duplicate_records(cursor)
     delete_duplicate_contact_records(cursor)
+    delete_duplicate_history_records(cursor)
     db.close()
 
     db = mysql_connect()
